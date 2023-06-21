@@ -13,16 +13,15 @@ class ChordGenerator:
     def __init__(self):
         pass
 
-    # choose selection of random notes
-    def rand_selection(self):
+    # has selection of notes and develops a custom chord
+    def rand_selection(self) -> None:
         letters = ["A", "B", "C", "D", "E", "F", "G"]
         numbers = [1, 2, 3, 4, 5, 6, 7]
 
         basic_notes, notes, chord = self.note_combiner(letters, numbers)
-        # print(chord)
-        # print(notes)
         self.audio_note_combiner(notes)
 
+    # chooses notes, and provides namesake of chord
     def note_combiner(self, letters, numbers) -> tuple():
         basic_notes = []
         notes = []
@@ -59,7 +58,6 @@ class ChordGenerator:
         zipped = sorted(zipped, key=sort_chord)
         basic_notes = [note[0] for note in zipped]
         notes = [note[1] for note in zipped]
-        # print(test_notes)
         chord = find_chords_from_notes(basic_notes)
 
         if len(chord) == 0:
@@ -73,6 +71,7 @@ class ChordGenerator:
 
         return basic_notes, notes, chord
 
+    # creates audiofile of combined notes i.e chord
     def audio_note_combiner(self, notes):
         # combine notes
         name = []
@@ -103,7 +102,6 @@ class ChordGenerator:
         name = sep.join(name)
 
         combined_sounds.export(f"{name}.mp3", format="mp3")
-        # test.export(f"{notes[0]}.mp3", format="mp3")
 
 
 if __name__ == "__main__":
