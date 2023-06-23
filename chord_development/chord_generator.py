@@ -2,6 +2,8 @@ from pychord import Chord, find_chords_from_notes
 from pydub import AudioSegment
 import random
 import os
+import sys
+import fnmatch
 
 """
 This function generates random chords, creates an audiowave saves file
@@ -10,8 +12,8 @@ This function generates random chords, creates an audiowave saves file
 
 
 class ChordGenerator:
-    def __init__(self):
-        pass
+    def __init__(self, args=None):
+        self.args = args
 
     # has selection of notes and develops a custom chord
     def rand_selection(self) -> None:
@@ -19,7 +21,10 @@ class ChordGenerator:
         numbers = [1, 2, 3, 4, 5, 6, 7]
 
         basic_notes, notes, chord = self.note_combiner(letters, numbers)
-        self.audio_note_combiner(notes)
+        
+        if '-develop-chord' in self.args or '-no-develop-chord' not in self.args:
+            self.audio_note_combiner(notes)   
+        
 
     # chooses notes, and provides namesake of chord
     def note_combiner(self, letters, numbers) -> tuple():
@@ -100,10 +105,18 @@ class ChordGenerator:
 
         sep = "_"
         name = sep.join(name)
-
-        combined_sounds.export(f"{name}.mp3", format="mp3")
+        if any(fnmatch.fnmatch(my_args := argument, 'dest=*') for argument in self.args):
+            store_directory = my_args[5:]
+        else:
+            store_directory = 'stored-chords'
+        
+        try:
+            combined_sounds.export(f"{store_directory}/{name}.mp3", format="mp3")
+            
+        except(FileNotFoundError):
+            raise FileNotFoundError("Make sure directory exists")
 
 
 if __name__ == "__main__":
-    chord_generator = ChordGenerator()
+    chord_generator = ChordGenerator(sys.argv)
     chord_generator.rand_selection()
