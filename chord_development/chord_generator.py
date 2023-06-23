@@ -9,9 +9,15 @@ import fnmatch
 This function generates random chords, creates an audiowave saves file
 system arguments can be given:
     dest=<directory destination>; by default is stored-chords
-    -chord-develop: by default; choose to develop chords
+    num-notes=<int>: give predefined notes
+    -chord-develop: by default; choose to develop chords (deprecated)
     -no-develop-chord: doesn't develop chord
     -debug-mode: prints outputs
+    -sort: enables sorting of letters (only enable if program is not working) (likely deprecated)
+    notes=<list of notes separated by commas>
+    # make file name to be chord name
+    # need to add # support through extra files
+
 """
 
 
@@ -22,25 +28,32 @@ class ChordGenerator:
     # has selection of notes and develops a custom chord
     def rand_selection(self) -> None:
         letters = ["A", "B", "C", "D", "E", "F", "G"]
-        accidentals = ["","b","#"]
+        accidentals = ["", "b"]
         numbers = [1, 2, 3, 4, 5, 6, 7]
 
         basic_notes, notes, chord = self.note_combiner(letters, numbers, accidentals)
-        
+
         if "-debug-mode" in self.args:
-            print('basic_notes:', basic_notes)
-            print('notes:', notes)
-            print('chord:', chord)
+            print("basic_notes:", basic_notes)
+            print("notes:", notes)
+            print("chord:", chord)
 
         if "-develop-chord" in self.args or "-no-develop-chord" not in self.args:
             self.audio_note_combiner(notes)
 
     # chooses notes, and provides namesake of chord
     def note_combiner(self, letters, numbers, accidentals) -> tuple():
+        random.seed()
+        
         basic_notes = []
         notes = []
-        no_of_notes = random.randrange(2, 6)
-        random.seed()
+        
+        if any(fnmatch.fnmatch(num := number, 'num-notes=*') for number in self.args):
+            my_num = int(num[10:])
+            no_of_notes = my_num
+        
+        else: 
+            no_of_notes = random.randrange(2, 6)
 
         def number_choice(number_list):
             number = random.choice(number_list)
@@ -64,41 +77,55 @@ class ChordGenerator:
 
             else:
                 raise ValueError("The note is not the correct size")
-
-        for i in range(no_of_notes):
-            letter = random.choice(letters)
-            accidental = random.choice(accidentals)
-            number = number_choice(numbers)
-            if letter == 'B' and accidental == '#':
-                letter = 'C'
-                accidental = ''
             
-            if letter == 'E' and accidental == '#':
-                letter = 'F'
-                accidental = ''
+        if any(fnmatch.fnmatch(my_args := argument, 'notes=*') for argument in self.args):
+            
+            set_notes: str = my_args[6:] # (A5, B5, C5)
+            set_notes = set_notes.split(',')
+            set_notes = [item.strip() for item in set_notes]
+            notes = set_notes
+            basic_notes = [item[:-1] for item in set_notes]
+            
+        else:
+            i = 0
+            while i < no_of_notes:
+                letter = random.choice(letters)
+                accidental = random.choice(accidentals)
+                number = number_choice(numbers)
+                if letter == "B" and accidental == "#":
+                    letter = "C"
+                    accidental = ""
+
+                if letter == "E" and accidental == "#":
+                    letter = "F"
+                    accidental = ""
+
+                if letter == "F" and accidental == "b":
+                    letter = "E"
+                    accidental = ""
+
+                if letter == "C" and accidental == "b":
+                    letter = "B"
+                    accidental = ""
+
+                chord_prefix = letter + accidental + str(number)
+
+                if chord_prefix not in notes:
+                    basic_notes.append(letter + accidental)
+                    notes.append(chord_prefix)
+                    i += 1
                 
-            if letter == 'F' and accidental == 'b':
-                letter = 'E'
-                accidental = ''
-            
-            if letter == 'C' and accidental == 'b':
-                letter = 'B'
-                accidental = ''
-            
-            chord_prefix = letter + accidental + str(number)
-
-            if chord_prefix not in notes:
-                basic_notes.append(letter + accidental)
-                notes.append(chord_prefix)
+                    
 
         # combine here using zip, then sort ascending by octave then by note
         zipped = zip(basic_notes, notes)
-        zipped = sorted(zipped, key=sort_chord)
-        print(zipped)
+        if '-sort' in self.args:
+            zipped = sorted(zipped, key=sort_chord)
+        
+        else:
+            zipped = sorted(zipped, key=lambda x: x[1][-1])
         basic_notes = [note[0] for note in zipped]
         notes = [note[1] for note in zipped]
-        print(basic_notes)
-        # problem here that E#, B# and Fb don't exist
         chord = find_chords_from_notes(basic_notes)
 
         if len(chord) == 0:
@@ -106,9 +133,11 @@ class ChordGenerator:
                 return self.note_combiner(letters, numbers, accidentals)
 
             except RecursionError:
-                print("Error happened")
-                print(notes)
-                exit()
+                raise RecursionError(
+                    "Error happened. If using pre-defined notes or number of notes, it may be because the arrangment does not exist\n"
+                                    f"notes: {notes}"
+                                    ) from None
+
 
         return basic_notes, notes, chord
 
@@ -141,7 +170,7 @@ class ChordGenerator:
 
         sep = "_"
         name = sep.join(name)
-        
+
         if any(
             fnmatch.fnmatch(my_args := argument, "dest=*") for argument in self.args
         ):
@@ -157,5 +186,6 @@ class ChordGenerator:
 
 
 if __name__ == "__main__":
+    sys.setrecursionlimit(5000)
     chord_generator = ChordGenerator(sys.argv)
     chord_generator.rand_selection()
