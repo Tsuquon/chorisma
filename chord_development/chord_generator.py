@@ -28,7 +28,7 @@ class ChordGenerator:
     # has selection of notes and develops a custom chord
     def rand_selection(self) -> None:
         letters = ["A", "B", "C", "D", "E", "F", "G"]
-        accidentals = ["", "b"]
+        accidentals = ["", "b", "#"]
         numbers = [1, 2, 3, 4, 5, 6, 7]
 
         basic_notes, notes, chord = self.note_combiner(letters, numbers, accidentals)
@@ -110,6 +110,7 @@ class ChordGenerator:
 
                 chord_prefix = letter + accidental + str(number)
 
+                
                 if chord_prefix not in notes:
                     basic_notes.append(letter + accidental)
                     notes.append(chord_prefix)
@@ -143,8 +144,16 @@ class ChordGenerator:
 
     # creates audiofile of combined notes i.e chord
     def audio_note_combiner(self, notes):
+        sharp_to_flat = {'A#':'Bb', 'C#':'Db', 'D#':'Eb', 'F#':'Gb', 'G#':'Ab'}
+
+        
         # combine notes
         name = []
+        name_note = notes[0]
+        
+        if notes[0][:-1] in sharp_to_flat:
+            notes[0] = sharp_to_flat.get(notes[0][:-1]) + notes[0][-1]
+        
         try:
             combined_sounds = AudioSegment.from_mp3(
                 f"./chord_development/piano-mp3/{notes[0]}.mp3"
@@ -155,18 +164,23 @@ class ChordGenerator:
                 f"The file path for the specified note '{notes[0]}' doesn't exist"
             )
 
-        name.append(notes[0])
+        name.append(name_note)
         notes.pop(0)
 
         for note in notes:
+            name_note = note
+            
+            if note[:-1] in sharp_to_flat:
+                note = sharp_to_flat.get(note[:-1]) + note[-1]
+            
             if not os.path.exists(f"./chord_development/piano-mp3/{note}.mp3"):
                 raise FileNotFoundError(
-                    f"The file path for the specified note '{note}' doesn't exist"
+                    f"The file path for the specified note '{name_note}' doesn't exist"
                 )
 
             sound = AudioSegment.from_mp3(f"./chord_development/piano-mp3/{note}.mp3")
             combined_sounds = combined_sounds.overlay(sound)
-            name.append(note)
+            name.append(name_note)
 
         sep = "_"
         name = sep.join(name)
@@ -186,6 +200,6 @@ class ChordGenerator:
 
 
 if __name__ == "__main__":
-    sys.setrecursionlimit(5000)
+    sys.setrecursionlimit(10000)
     chord_generator = ChordGenerator(sys.argv)
     chord_generator.rand_selection()
