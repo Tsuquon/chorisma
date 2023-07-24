@@ -31,15 +31,15 @@ class ChordGenerator:
         accidentals = ["", "b", "#"]
         numbers = [1, 2, 3, 4, 5, 6, 7]
 
-        basic_notes, notes, chord = self.note_combiner(letters, numbers, accidentals)
+        self.basic_notes, self.notes, self.chord = self.note_combiner(letters, numbers, accidentals)
 
         if "-debug-mode" in self.args:
-            print("basic_notes:", basic_notes)
-            print("notes:", notes)
-            print("chord:", chord)
+            print("basic_notes:", self.basic_notes)
+            print("notes:", self.notes)
+            print("chord:", self.chord)
 
         if "-develop-chord" in self.args or "-no-develop-chord" not in self.args:
-            self.audio_note_combiner(notes)
+            self.audio_note_combiner(self.notes)
 
     # chooses notes, and provides namesake of chord
     def note_combiner(self, letters, numbers, accidentals) -> tuple():
@@ -162,7 +162,7 @@ class ChordGenerator:
         except FileNotFoundError:
             raise FileNotFoundError(
                 f"The file path for the specified note '{notes[0]}' doesn't exist"
-            )
+            ) from None
 
         name.append(name_note)
         notes.pop(0)
@@ -191,12 +191,21 @@ class ChordGenerator:
             store_directory = my_args[5:]
         else:
             store_directory = "stored-chords"
+        
+        
+        print(self.chord[0].info().split()[0].replace('/','_'))
+        try:
+            os.mkdir(f"{store_directory}/{self.chord[0].info().split()[0].replace('/','_')}")
+        
+        except FileExistsError:
+            pass
 
         try:
-            combined_sounds.export(f"{store_directory}/{name}.mp3", format="mp3")
+            combined_sounds.export(f"{store_directory}/{self.chord[0].info().split()[0].replace('/','_')}/{name}.mp3", format="mp3")
 
         except FileNotFoundError:
-            raise FileNotFoundError("Make sure directory exists")
+            raise FileNotFoundError("Make sure directory exists and ffmpeg is installed")
+        
 
 
 if __name__ == "__main__":
