@@ -193,7 +193,7 @@ class ChordGenerator:
             store_directory = "stored-chords"
         
         
-        print(self.chord[0].info().split()[0].replace('/','_'))
+        # print(self.chord[0].info().split()[0].replace('/','_'))
         try:
             os.mkdir(f"{store_directory}/{self.chord[0].info().split()[0].replace('/','_')}")
         
